@@ -18,7 +18,7 @@ pub fn start_server<S, F>(development_mode: bool, state: Arc<S>, handler: fn(Arc
         PRODUCTION_PORT
     };
 
-    let addr = ([127, 0, 0, 1], port).into();
+    let addr = ([0, 0, 0, 0], port).into();
 
     let new_service = move || {
         let copied_state = state.clone();
