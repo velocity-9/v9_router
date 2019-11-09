@@ -7,8 +7,6 @@ use hyper::{Body, Method, Request, Response, Uri};
 use crate::error::RouterError;
 use crate::router::ComponentRequest;
 
-//mod router;
-
 // Warning: This method is somewhat complicated, since it needs to deal with async stuff
 // TODO: Consider making this a method on a struct somewhere
 // TODO: Deal with panics bubbling up to this level

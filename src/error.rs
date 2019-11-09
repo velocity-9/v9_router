@@ -12,7 +12,6 @@ pub enum RouterError {
 
 impl Display for RouterError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        // Technically this isn't very DRY, but I felt like factoring it out hurt readability YMMV
         match self {
             RouterError::Hyper(e) => {
                 write!(f, "RouterError, caused by internal hyper error: {}", e)?;
@@ -36,15 +35,6 @@ impl From<hyper::error::Error> for RouterError {
     }
 }
 
-impl Into<Response<Body>> for RouterError {
-    fn into(self) -> Response<Body> {
-        Response::builder()
-            .status(StatusCode::INTERNAL_SERVER_ERROR)
-            .body(Body::from(self.to_string()))
-            .unwrap()
-    }
-}
-
 impl From<Utf8Error> for RouterError {
     fn from(e: Utf8Error) -> Self {
         RouterError::InvalidUtf8(e)
@@ -54,5 +44,14 @@ impl From<Utf8Error> for RouterError {
 impl From<serde_json::Error> for RouterError {
     fn from(e: serde_json::Error) -> Self {
         RouterError::InternalJsonHandling(e)
+    }
+}
+
+impl Into<Response<Body>> for RouterError {
+    fn into(self) -> Response<Body> {
+        Response::builder()
+            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .body(Body::from(self.to_string()))
+            .unwrap()
     }
 }
