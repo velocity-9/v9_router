@@ -15,21 +15,15 @@ impl Display for RouterError {
         // Technically this isn't very DRY, but I felt like factoring it out hurt readability YMMV
         match self {
             RouterError::Hyper(e) => {
-                f.write_str("RouterError, caused by internal hyper error (")?;
-                e.fmt(f)?;
-                f.write_str(")")?;
+                write!(f, "RouterError, caused by internal hyper error: {}", e)?;
             }
 
             RouterError::InvalidUtf8(e) => {
-                f.write_str("RouterError, caused by internal utf8 decode error (")?;
-                e.fmt(f)?;
-                f.write_str(")")?;
+                write!(f, "RouterError, caused by internal utf8 decode error: {}", e)?;
             }
 
             RouterError::InternalJsonHandling(e) => {
-                f.write_str("RouterError, caused by internal serde_json error (")?;
-                e.fmt(f)?;
-                f.write_str(")")?;
+                write!(f, "RouterError, caused by internal serde_json error: {}", e)?;
             }
         }
         Ok(())
