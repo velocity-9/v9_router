@@ -30,9 +30,16 @@ use std::sync::Arc;
 use crate::request_handler::HttpRequestHandler;
 
 fn main() {
+    flexi_logger::Logger::with_str(
+        "trace, hyper=info, mio=info, tokio_reactor=info, tokio_threadpool=info",
+        )
+        .start()
+        .unwrap();
+    info!("Router started...(logger initialized)");
+
     let is_development_mode = env::args().any(|arg| arg == "--development");
     if is_development_mode {
-        println!("Starting in development mode");
+        info!("Starting in development mode");
     }
 
     let http_request_handler = HttpRequestHandler::new();
