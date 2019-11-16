@@ -13,11 +13,11 @@ pub enum RouterError {
 impl Display for RouterError {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
         match self {
-            RouterError::Hyper(e) => {
+            Self::Hyper(e) => {
                 write!(f, "RouterError, caused by internal hyper error: {}", e)?;
             }
 
-            RouterError::InvalidUtf8(e) => {
+            Self::InvalidUtf8(e) => {
                 write!(
                     f,
                     "RouterError, caused by internal utf8 decode error: {}",
@@ -25,7 +25,7 @@ impl Display for RouterError {
                 )?;
             }
 
-            RouterError::InternalJsonHandling(e) => {
+            Self::InternalJsonHandling(e) => {
                 write!(f, "RouterError, caused by internal serde_json error: {}", e)?;
             }
         }
@@ -35,19 +35,19 @@ impl Display for RouterError {
 
 impl From<hyper::error::Error> for RouterError {
     fn from(e: hyper::error::Error) -> Self {
-        RouterError::Hyper(e)
+        Self::Hyper(e)
     }
 }
 
 impl From<Utf8Error> for RouterError {
     fn from(e: Utf8Error) -> Self {
-        RouterError::InvalidUtf8(e)
+        Self::InvalidUtf8(e)
     }
 }
 
 impl From<serde_json::Error> for RouterError {
     fn from(e: serde_json::Error) -> Self {
-        RouterError::InternalJsonHandling(e)
+        Self::InternalJsonHandling(e)
     }
 }
 
