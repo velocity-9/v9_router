@@ -1,7 +1,7 @@
 use std::fmt::{self, Display, Formatter};
 use std::str::Utf8Error;
 
-use hyper::{Body, Response, StatusCode};
+use hyper::{Body, Response};
 
 #[derive(Debug, Fail)]
 pub enum RouterError {
@@ -18,7 +18,11 @@ impl Display for RouterError {
             }
 
             RouterError::InvalidUtf8(e) => {
-                write!(f, "RouterError, caused by internal utf8 decode error: {}", e)?;
+                write!(
+                    f,
+                    "RouterError, caused by internal utf8 decode error: {}",
+                    e
+                )?;
             }
 
             RouterError::InternalJsonHandling(e) => {
