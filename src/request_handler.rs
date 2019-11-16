@@ -45,8 +45,8 @@ pub fn global_request_entrypoint(
                 e.into()
             });
 
-        if resp.status() == 400 {
-            error!("INTERNAL SERVER ERROR -- {:?}", resp);
+        if resp.status() == 532 {
+            error!("INTERNAL ROUTER ERROR -- {:?}", resp);
         } else {
             debug!("{:?}", resp);
         }

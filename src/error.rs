@@ -50,7 +50,7 @@ impl From<serde_json::Error> for RouterError {
 impl Into<Response<Body>> for RouterError {
     fn into(self) -> Response<Body> {
         Response::builder()
-            .status(StatusCode::INTERNAL_SERVER_ERROR)
+            .status(532)
             .body(Body::from(self.to_string()))
             .unwrap()
     }

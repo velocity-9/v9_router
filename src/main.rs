@@ -1,4 +1,5 @@
 //I'd like the most pedantic warning level
+//
 #![warn(
     clippy::cargo,
     clippy::needless_borrow,
@@ -17,7 +18,6 @@
 extern crate failure;
 #[macro_use]
 extern crate log;
-extern crate serde;
 
 mod error;
 mod request_handler;
