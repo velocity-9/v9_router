@@ -83,6 +83,7 @@ impl RequestForwarder {
         for worker in workers.iter() {
             let component_list = worker.get_component_list()?;
             for component_name in component_list.iter() {
+                debug!("{}", component_name);
                 components_map.insert(component_name.to_string(), Arc::clone(worker));
             }
         }
