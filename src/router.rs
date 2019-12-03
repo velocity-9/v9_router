@@ -77,7 +77,7 @@ impl RequestForwarder {
         let mut components_map: HashMap<String, Arc<WorkerNode>> = HashMap::new();
 
         // TODO: load worker nodes from file into vector
-        workers.push(Arc::new(WorkerNode::new(String::from("localhost"))));
+        workers.push(Arc::new(WorkerNode::new(String::from("http://localhost"))));
 
         // - scan through server list to get active components
         for worker in workers.iter() {

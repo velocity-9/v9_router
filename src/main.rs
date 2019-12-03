@@ -31,8 +31,9 @@ use std::env;
 use std::sync::Arc;
 
 use crate::request_handler::HttpRequestHandler;
+use crate::error::RouterError;
 
-fn main() {
+fn main() -> Result<(), RouterError> {
     let log_spec = "trace, hyper=info, mio=info, tokio_reactor=info, tokio_threadpool=info";
 
     flexi_logger::Logger::with_str(log_spec).start().unwrap();
@@ -44,15 +45,13 @@ fn main() {
     }
 
     //TODO: There must be a better way to do this
-    let http_request_handler = match HttpRequestHandler::new() {
-        Ok(v) => v,
-        Err(e) => return
-    };
-    
+    let http_request_handler = HttpRequestHandler::new()?;    
 
     server::start_server(
         is_development_mode,
         Arc::new(http_request_handler),
         request_handler::global_request_entrypoint,
     );
+
+    Ok(())
 }
