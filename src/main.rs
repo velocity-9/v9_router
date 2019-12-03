@@ -18,11 +18,14 @@
 extern crate failure;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate serde;
 
 mod error;
 mod request_handler;
 mod router;
 mod server;
+mod model;
 
 use std::env;
 use std::sync::Arc;
@@ -40,7 +43,12 @@ fn main() {
         info!("Starting in development mode");
     }
 
-    let http_request_handler = HttpRequestHandler::new();
+    //TODO: There must be a better way to do this
+    let http_request_handler = match HttpRequestHandler::new() {
+        Ok(v) => v,
+        Err(e) => return
+    };
+    
 
     server::start_server(
         is_development_mode,

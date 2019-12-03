@@ -8,6 +8,7 @@ pub enum RouterError {
     Hyper(hyper::error::Error),
     InternalJsonHandling(serde_json::Error),
     InvalidUtf8(Utf8Error),
+    InvalidRequest(reqwest::Error),
 }
 
 impl Display for RouterError {
@@ -27,6 +28,10 @@ impl Display for RouterError {
 
             Self::InternalJsonHandling(e) => {
                 write!(f, "RouterError, caused by internal serde_json error: {}", e)?;
+            }
+
+            Self::InvalidRequest(e) => {
+                write!(f, "RouterError, caused by an invalid reqwest response: {}", e)?;
             }
         }
         Ok(())
@@ -48,6 +53,12 @@ impl From<Utf8Error> for RouterError {
 impl From<serde_json::Error> for RouterError {
     fn from(e: serde_json::Error) -> Self {
         Self::InternalJsonHandling(e)
+    }
+}
+
+impl From<reqwest::Error> for RouterError {
+    fn from(e: reqwest::Error) -> Self {
+        Self::InvalidRequest(e)
     }
 }
 

@@ -5,7 +5,7 @@ use hyper::rt::{Future, Stream};
 use hyper::{Body, Method, Request, Response, Uri};
 
 use crate::error::RouterError;
-use crate::router::ComponentRequest;
+use crate::router::{ComponentRequest, RequestForwarder};
 
 // Warning: This method is somewhat complicated, since it needs to deal with async stuff
 // TODO: Consider making this a method on a struct somewhere
@@ -57,14 +57,19 @@ pub fn global_request_entrypoint(
 
 #[derive(Debug)]
 pub struct HttpRequestHandler {
-    test_output: String,
+    //Contents of this handler is global state
+    //This might include cached status checks, a list of previously seen components, etc
+    //Modifying this state should be done with a mutex or RW lock
+    request_forwarder: RequestForwarder,
 }
 
 impl HttpRequestHandler {
-    pub fn new() -> Self {
-        Self {
-            test_output: String::from("this is a test"),
-        }
+    pub fn new() -> Result<Self, RouterError> {
+        Ok(
+            Self {
+                request_forwarder: RequestForwarder::new()?
+            }
+        )
     }
 
     fn handle(
@@ -83,7 +88,7 @@ impl HttpRequestHandler {
         let method = path_components[3].to_string();
 
         let request = ComponentRequest::new(http_verb, query, body, user, repo, method);
-        let result_body = request.forward_component_request();
+        let result_body = self.request_forwarder.forward_request(request);
 
         //TODO: This should return the actual response from the server
         Ok(Response::builder().status(200).body(result_body).unwrap())
