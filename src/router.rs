@@ -1,8 +1,9 @@
 use std::collections::HashMap;
-use hyper::{Body, Method};
+use hyper::{Body, Method, Response};
 use std::sync::Arc;
 use crate::model::StatusResponse;
 use crate::error::RouterError;
+use parking_lot::RwLock;
 
 pub struct ComponentRequest {
     http_verb: Method,
@@ -54,12 +55,16 @@ impl WorkerNode {
         let body = reqwest::get(&url)?.text()?;
 
         let response: StatusResponse = serde_json::from_str(&body)?;
+        debug!("{:?}", response.active_components);
         let mut component_list = Vec::new();       
         
         for component in response.active_components.iter() {
             let component_name = format!("{}/{}", component.id.path.user, component.id.path.repo);
+            debug!("{}", component_name);
             component_list.push(component_name);
         }
+
+        debug!("{:?}", component_list);
 
         Ok(component_list)
     }
@@ -68,35 +73,72 @@ impl WorkerNode {
 #[derive(Debug)]
 pub struct RequestForwarder {
     workers: Vec<Arc<WorkerNode>>,
-    components_map: HashMap<String, Arc<WorkerNode>>
+    components_map: RwLock<HashMap<String, Arc<WorkerNode>>>
 }
 
 impl RequestForwarder {
     pub fn new() -> Result<Self, RouterError> {
         let mut workers = Vec::new();
-        let mut components_map: HashMap<String, Arc<WorkerNode>> = HashMap::new();
+        //Why does this not need to be mutable?
+        let components_map = RwLock::new(HashMap::new());
 
         // TODO: load worker nodes from file into vector
-        workers.push(Arc::new(WorkerNode::new(String::from("http://localhost"))));
+        
+        //Worker One
+        workers.push(Arc::new(WorkerNode::new(String::from("http://ec2-34-228-212-219.compute-1.amazonaws.com"))));
+
+        //Worker Two
+        workers.push(Arc::new(WorkerNode::new(String::from("http://ec2-54-211-200-158.compute-1.amazonaws.com"))));
+
+        let res = Self {
+            workers,
+            components_map,
+        };
 
         // - scan through server list to get active components
-        for worker in workers.iter() {
+        res.update_workers()?;
+
+        Ok(res)        
+    }
+
+    // TODO: Update worker status with this as well
+    pub fn update_workers(&self) -> Result<(), RouterError> {
+        for worker in self.workers.iter() {
             let component_list = worker.get_component_list()?;
             for component_name in component_list.iter() {
                 debug!("{}", component_name);
-                components_map.insert(component_name.to_string(), Arc::clone(worker));
+                self.components_map.write().insert(component_name.to_string(), Arc::clone(worker));
             }
         }
 
-        Ok(
-            Self {
-                workers,
-                components_map,
-            }
-        )
+        Ok(())
     }
 
-    pub fn forward_request(&self, request: ComponentRequest) -> Body {
-        Body::from("Hello!")
+    pub fn forward_request(&self, request: ComponentRequest) -> Result<Response<Body>, RouterError> {
+        let res = match &request.http_verb {
+            &Method::GET => self.forward_get(request)?,
+            _            => unimplemented!()
+        };
+
+        Ok(res)
+    }
+
+    fn forward_get(&self, request: ComponentRequest) -> Result<Response<Body>, RouterError> {
+        let component_name = format!("{}/{}", request.user, request.repo);
+        if !self.components_map.read().contains_key(&component_name) {
+            self.update_workers()?;
+        }
+
+        debug!("{:?}", component_name);
+
+        if !self.components_map.read().contains_key(&component_name) {
+            let body = Body::from("Requested component not found\n");
+            return Ok(Response::builder().status(404).body(body).unwrap());
+        }
+
+        let url = format!("{}/sl/{}/{}", self.components_map.read().get(&component_name).unwrap().url, component_name, request.method);
+        let mut worker_resp = reqwest::get(&url)?;
+
+        Ok(Response::builder().status(worker_resp.status()).body(Body::from(worker_resp.text()?)).unwrap())
     }
 }

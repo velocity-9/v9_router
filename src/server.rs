@@ -31,6 +31,7 @@ pub fn start_server<S, F>(
     let server = Server::bind(&addr)
         .serve(new_service)
         .map_err(|e| error!("server error: {}", e));
-
+    
+    info!("Starting Server...");
     rt::run(server);
 }

@@ -34,7 +34,7 @@ use crate::request_handler::HttpRequestHandler;
 use crate::error::RouterError;
 
 fn main() -> Result<(), RouterError> {
-    let log_spec = "trace, hyper=info, mio=info, tokio_reactor=info, tokio_threadpool=info";
+    let log_spec = "debug, hyper=info, mio=info, tokio_reactor=info, tokio_threadpool=info";
 
     flexi_logger::Logger::with_str(log_spec).start().unwrap();
     info!("Router started...(logger initialized)");

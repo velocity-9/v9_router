@@ -88,9 +88,6 @@ impl HttpRequestHandler {
         let method = path_components[3].to_string();
 
         let request = ComponentRequest::new(http_verb, query, body, user, repo, method);
-        let result_body = self.request_forwarder.forward_request(request);
-
-        //TODO: This should return the actual response from the server
-        Ok(Response::builder().status(200).body(result_body).unwrap())
+        Ok(self.request_forwarder.forward_request(request)?)
     }
 }

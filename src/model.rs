@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 // These are just nice PORO (plain old rust objects) for modeling requests and responses
 
 #[derive(Clone, Deserialize, Debug, Eq, Hash, PartialEq, Serialize)]
