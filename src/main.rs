@@ -22,16 +22,16 @@ extern crate log;
 extern crate serde;
 
 mod error;
+mod model;
 mod request_handler;
 mod router;
 mod server;
-mod model;
 
 use std::env;
 use std::sync::Arc;
 
-use crate::request_handler::HttpRequestHandler;
 use crate::error::RouterError;
+use crate::request_handler::HttpRequestHandler;
 
 fn main() -> Result<(), RouterError> {
     let log_spec = "debug, hyper=info, mio=info, tokio_reactor=info, tokio_threadpool=info";
@@ -44,8 +44,8 @@ fn main() -> Result<(), RouterError> {
         info!("Starting in development mode");
     }
 
-    //TODO: There must be a better way to do this
-    let http_request_handler = HttpRequestHandler::new()?;    
+    //TODO: There must be a better way to do error handling
+    let http_request_handler = HttpRequestHandler::new()?;
 
     server::start_server(
         is_development_mode,

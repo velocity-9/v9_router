@@ -31,7 +31,11 @@ impl Display for RouterError {
             }
 
             Self::InvalidRequest(e) => {
-                write!(f, "RouterError, caused by an invalid reqwest response: {}", e)?;
+                write!(
+                    f,
+                    "RouterError, caused by an invalid reqwest response: {}",
+                    e
+                )?;
             }
         }
         Ok(())

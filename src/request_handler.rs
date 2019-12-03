@@ -65,11 +65,9 @@ pub struct HttpRequestHandler {
 
 impl HttpRequestHandler {
     pub fn new() -> Result<Self, RouterError> {
-        Ok(
-            Self {
-                request_forwarder: RequestForwarder::new()?
-            }
-        )
+        Ok(Self {
+            request_forwarder: RequestForwarder::new()?,
+        })
     }
 
     fn handle(
