@@ -7,11 +7,8 @@ use hyper::{Body, Request, Response, Server};
 const PRODUCTION_PORT: u16 = 80;
 const DEVELOPMENT_PORT: u16 = 8080;
 
-pub fn start_server<S, F>(
-    development_mode: bool,
-    state: Arc<S>,
-    handler: fn(Arc<S>, Request<Body>) -> F,
-) where
+pub fn start_server<S, F>(development_mode: bool, state: Arc<S>, handler: fn(Arc<S>, Request<Body>) -> F)
+where
     S: Send + Sync + 'static,
     F: Future<Item = Response<Body>, Error = hyper::error::Error> + Send + 'static,
 {

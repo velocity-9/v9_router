@@ -1,9 +1,11 @@
-use crate::error::RouterError;
-use crate::model::StatusResponse;
-use hyper::{Body, Method, Response};
-use parking_lot::RwLock;
 use std::collections::HashMap;
 use std::sync::Arc;
+
+use hyper::{Body, Method, Response};
+use parking_lot::RwLock;
+
+use crate::error::RouterError;
+use crate::model::StatusResponse;
 
 pub struct ComponentRequest {
     http_verb: Method,
@@ -37,17 +39,11 @@ impl ComponentRequest {
 #[derive(Debug)]
 pub struct WorkerNode {
     url: String,
-    components: Vec<String>,
-    is_active: bool,
 }
 
 impl WorkerNode {
     pub fn new(url: String) -> Self {
-        Self {
-            url,
-            components: Vec::new(),
-            is_active: false,
-        }
+        Self { url }
     }
 
     pub fn get_component_list(&self) -> Result<Vec<String>, RouterError> {
@@ -77,9 +73,8 @@ pub struct RequestForwarder {
 }
 
 impl RequestForwarder {
-    pub fn new() -> Result<Self, RouterError> {
+    pub fn new() -> Self {
         let mut workers = Vec::new();
-        //Why does this not need to be mutable?
         let components_map = RwLock::new(HashMap::new());
 
         // TODO: load worker nodes from file into vector
@@ -94,19 +89,21 @@ impl RequestForwarder {
             "http://ec2-54-211-200-158.compute-1.amazonaws.com",
         ))));
 
-        let res = Self {
+        let request_forwarder = Self {
             workers,
             components_map,
         };
 
-        // - scan through server list to get active components
-        res.update_workers()?;
+        // Scan through server list to get initial active components
+        if let Err(e) = request_forwarder.update_workers() {
+            error!("Initial worker update failed: {:?}", e);
+        }
 
-        Ok(res)
+        request_forwarder
     }
 
-    // TODO: Update worker status with this as well
     pub fn update_workers(&self) -> Result<(), RouterError> {
+        self.components_map.write().clear();
         for worker in &self.workers {
             let component_list = worker.get_component_list()?;
             for component_name in &component_list {
@@ -120,29 +117,30 @@ impl RequestForwarder {
         Ok(())
     }
 
-    pub fn forward_request(
-        &self,
-        request: ComponentRequest,
-    ) -> Result<Response<Body>, RouterError> {
+    pub fn forward_request(&self, request: ComponentRequest) -> Result<Response<Body>, RouterError> {
         let component_name = format!("{}/{}", request.user, request.repo);
         if !self.components_map.read().contains_key(&component_name) {
             self.update_workers()?;
         }
 
-        debug!("{:?}", component_name);
+        debug!("Forwarding request to: {:?}", component_name);
 
         if !self.components_map.read().contains_key(&component_name) {
             let body = Body::from("Requested component not found\n");
+            warn!("Component to forward to not found: {:?}", component_name);
             return Ok(Response::builder().status(404).body(body).unwrap());
         }
 
-        let url = format!(
-            "{}/sl/{}/{}?{}",
+        let mut url = format!(
+            "{}/sl/{}/{}",
             self.components_map.read().get(&component_name).unwrap().url,
             component_name,
-            request.method,
-            request.query
+            request.method
         );
+
+        if !request.query.is_empty() {
+            url = format!("{}?{}", url, request.query);
+        }
 
         let client = reqwest::Client::new();
         let mut worker_resp = client

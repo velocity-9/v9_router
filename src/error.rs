@@ -7,8 +7,8 @@ use hyper::{Body, Response};
 pub enum RouterError {
     Hyper(hyper::error::Error),
     InternalJsonHandling(serde_json::Error),
-    InvalidUtf8(Utf8Error),
     InvalidRequest(reqwest::Error),
+    InvalidUtf8(Utf8Error),
 }
 
 impl Display for RouterError {
@@ -18,24 +18,16 @@ impl Display for RouterError {
                 write!(f, "RouterError, caused by internal hyper error: {}", e)?;
             }
 
-            Self::InvalidUtf8(e) => {
-                write!(
-                    f,
-                    "RouterError, caused by internal utf8 decode error: {}",
-                    e
-                )?;
-            }
-
             Self::InternalJsonHandling(e) => {
                 write!(f, "RouterError, caused by internal serde_json error: {}", e)?;
             }
 
             Self::InvalidRequest(e) => {
-                write!(
-                    f,
-                    "RouterError, caused by an invalid reqwest response: {}",
-                    e
-                )?;
+                write!(f, "RouterError, caused by an invalid reqwest response: {}", e)?;
+            }
+
+            Self::InvalidUtf8(e) => {
+                write!(f, "RouterError, caused by internal utf8 decode error: {}", e)?;
             }
         }
         Ok(())
@@ -48,9 +40,9 @@ impl From<hyper::error::Error> for RouterError {
     }
 }
 
-impl From<Utf8Error> for RouterError {
-    fn from(e: Utf8Error) -> Self {
-        Self::InvalidUtf8(e)
+impl From<reqwest::Error> for RouterError {
+    fn from(e: reqwest::Error) -> Self {
+        Self::InvalidRequest(e)
     }
 }
 
@@ -60,9 +52,9 @@ impl From<serde_json::Error> for RouterError {
     }
 }
 
-impl From<reqwest::Error> for RouterError {
-    fn from(e: reqwest::Error) -> Self {
-        Self::InvalidRequest(e)
+impl From<Utf8Error> for RouterError {
+    fn from(e: Utf8Error) -> Self {
+        Self::InvalidUtf8(e)
     }
 }
 

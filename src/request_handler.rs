@@ -25,9 +25,7 @@ pub fn global_request_entrypoint(
     // Then get a future representing the body (this is a future, since hyper may not of received the whole body yet)
     let body_future = req.into_body().concat2().map(|c| {
         // Convert the Chunk into a rust "String", wrapping any error in our error type
-        str::from_utf8(&c)
-            .map(str::to_owned)
-            .map_err(RouterError::from)
+        str::from_utf8(&c).map(str::to_owned).map_err(RouterError::from)
     });
 
     // Next we want to an operation on the body. This needs to happen in a future for two reasons
@@ -39,7 +37,7 @@ pub fn global_request_entrypoint(
 
         let resp: Response<Body> = body_result
             // Delegate to the handler to actually deal with this request
-            .and_then(|body| handler.handle(http_verb, uri, query, body))
+            .and_then(|body| handler.handle(http_verb, &uri, query, body))
             .unwrap_or_else(|e| {
                 warn!("Forced to convert error {:?} into a http response", e);
                 e.into()
@@ -57,23 +55,21 @@ pub fn global_request_entrypoint(
 
 #[derive(Debug)]
 pub struct HttpRequestHandler {
-    //Contents of this handler is global state
-    //This might include cached status checks, a list of previously seen components, etc
-    //Modifying this state should be done with a mutex or RW lock
+    // Contents of this handler need to be thread-safe
     request_forwarder: RequestForwarder,
 }
 
 impl HttpRequestHandler {
-    pub fn new() -> Result<Self, RouterError> {
-        Ok(Self {
-            request_forwarder: RequestForwarder::new()?,
-        })
+    pub fn new() -> Self {
+        Self {
+            request_forwarder: RequestForwarder::new(),
+        }
     }
 
     fn handle(
         &self,
         http_verb: Method,
-        uri: Uri,
+        uri: &Uri,
         query: String,
         body: String,
     ) -> Result<Response<Body>, RouterError> {
