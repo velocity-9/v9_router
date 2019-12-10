@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::env;
 use std::sync::Arc;
 
 use hyper::{Body, Method, Response};
@@ -77,17 +78,19 @@ impl RequestForwarder {
         let mut workers = Vec::new();
         let components_map = RwLock::new(HashMap::new());
 
-        // TODO: load worker nodes from file into vector
+        // If loading from the environment variable fails, there was a user error and we should
+        // bail
+        
+        let worker_string = match env::var("V9_WORKERS") {
+            Ok(value) => value,
+            Err(e) => panic!("No V9_WORKERS env variable set: {:?}", e),
+        };
 
-        //Worker One
-        workers.push(Arc::new(WorkerNode::new(String::from(
-            "http://ec2-34-228-212-219.compute-1.amazonaws.com",
-        ))));
+        let env_workers: Vec<&str> = worker_string.split(';').collect();
 
-        //Worker Two
-        workers.push(Arc::new(WorkerNode::new(String::from(
-            "http://ec2-54-211-200-158.compute-1.amazonaws.com",
-        ))));
+        for worker in &env_workers {
+            workers.push(Arc::new(WorkerNode::new(worker.to_string())));
+        }
 
         let request_forwarder = Self {
             workers,
