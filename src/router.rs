@@ -52,16 +52,22 @@ impl WorkerNode {
         let body = reqwest::get(&url)?.text()?;
 
         let response: StatusResponse = serde_json::from_str(&body)?;
-        debug!("{:?}", response.active_components);
+        debug!(
+            "Active components from worker response: {:?}",
+            response.active_components
+        );
         let mut component_list = Vec::new();
 
         for component in &response.active_components {
             let component_name = format!("{}/{}", component.id.path.user, component.id.path.repo);
-            debug!("{}", component_name);
+            debug!("Adding new component name: {:?}", component_name);
             component_list.push(component_name);
         }
 
-        debug!("{:?}", component_list);
+        debug!(
+            "Final component list from get_component_list: {:?}",
+            component_list
+        );
 
         Ok(component_list)
     }
@@ -80,7 +86,7 @@ impl RequestForwarder {
 
         // If loading from the environment variable fails, there was a user error and we should
         // bail
-        
+
         let worker_string = match env::var("V9_WORKERS") {
             Ok(value) => value,
             Err(e) => panic!("No V9_WORKERS env variable set: {:?}", e),
@@ -106,20 +112,20 @@ impl RequestForwarder {
     }
 
     pub fn update_workers(&self) -> Result<(), RouterError> {
-        self.components_map.write().clear();
+        let mut locked_map = self.components_map.write();
+        locked_map.clear();
         for worker in &self.workers {
             let component_list = worker.get_component_list()?;
             for component_name in &component_list {
-                debug!("{}", component_name);
-                self.components_map
-                    .write()
-                    .insert(component_name.to_string(), Arc::clone(worker));
+                debug!("Adding component to map: {:?}", component_name);
+                locked_map.insert(component_name.to_string(), Arc::clone(worker));
             }
         }
 
         Ok(())
     }
 
+    #[allow(clippy::single_match_else)]
     pub fn forward_request(&self, request: ComponentRequest) -> Result<Response<Body>, RouterError> {
         let component_name = format!("{}/{}", request.user, request.repo);
         if !self.components_map.read().contains_key(&component_name) {
@@ -127,18 +133,21 @@ impl RequestForwarder {
         }
 
         debug!("Forwarding request to: {:?}", component_name);
+        let locked_map = self.components_map.read();
+        let target_component_option = locked_map.get(&component_name);
 
-        if !self.components_map.read().contains_key(&component_name) {
-            let body = Body::from("Requested component not found\n");
-            warn!("Component to forward to not found: {:?}", component_name);
-            return Ok(Response::builder().status(404).body(body).unwrap());
-        }
+        let target_component = match target_component_option {
+            Some(v) => v,
+            None => {
+                let body = Body::from("Requested component not found\n");
+                warn!("Component to forward to not found: {:?}", component_name);
+                return Ok(Response::builder().status(404).body(body).unwrap());
+            }
+        };
 
         let mut url = format!(
             "{}/sl/{}/{}",
-            self.components_map.read().get(&component_name).unwrap().url,
-            component_name,
-            request.method
+            target_component.url, component_name, request.method
         );
 
         if !request.query.is_empty() {
