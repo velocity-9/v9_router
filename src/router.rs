@@ -128,9 +128,12 @@ impl RequestForwarder {
     #[allow(clippy::single_match_else)]
     pub fn forward_request(&self, request: ComponentRequest) -> Result<Response<Body>, RouterError> {
         let component_name = format!("{}/{}", request.user, request.repo);
-        if !self.components_map.read().contains_key(&component_name) {
-            self.update_workers()?;
-        }
+        //if !self.components_map.read().contains_key(&component_name) {
+        //    self.update_workers()?;
+        //}
+
+        // TODO: Make this more efficient (when do I actually need to call update_workers()?)
+        self.update_workers()?;
 
         debug!("Forwarding request to: {:?}", component_name);
         let locked_map = self.components_map.read();
