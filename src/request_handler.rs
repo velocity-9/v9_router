@@ -76,6 +76,10 @@ impl HttpRequestHandler {
         // Get the uri path, and then split it around slashes into components
         // Note: All URIs start with a slash, so we skip the first entry in the split (which is always just "")
         let path_components: Vec<&str> = uri.path().split('/').skip(1).collect();
+        if path_components.len() < 4 {
+            return Err(RouterError::PathNotFound());
+        }
+
 
         let user = path_components[1].to_string();
         let repo = path_components[2].to_string();

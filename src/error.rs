@@ -9,6 +9,7 @@ pub enum RouterError {
     InternalJsonHandling(serde_json::Error),
     InvalidRequest(reqwest::Error),
     InvalidUtf8(Utf8Error),
+    PathNotFound(),
 }
 
 impl Display for RouterError {
@@ -28,6 +29,10 @@ impl Display for RouterError {
 
             Self::InvalidUtf8(e) => {
                 write!(f, "RouterError, caused by internal utf8 decode error: {}", e)?;
+            }
+
+            Self::PathNotFound() => {
+                write!(f, "RouterError, caused by invalid URL path")?;
             }
         }
         Ok(())
