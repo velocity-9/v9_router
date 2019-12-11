@@ -5,7 +5,7 @@ use hyper::rt::{Future, Stream};
 use hyper::{Body, Method, Request, Response, Uri};
 
 use crate::error::RouterError;
-use crate::router::ComponentRequest;
+use crate::router::{ComponentRequest, RequestForwarder};
 
 // Warning: This method is somewhat complicated, since it needs to deal with async stuff
 // TODO: Consider making this a method on a struct somewhere
@@ -25,9 +25,7 @@ pub fn global_request_entrypoint(
     // Then get a future representing the body (this is a future, since hyper may not of received the whole body yet)
     let body_future = req.into_body().concat2().map(|c| {
         // Convert the Chunk into a rust "String", wrapping any error in our error type
-        str::from_utf8(&c)
-            .map(str::to_owned)
-            .map_err(RouterError::from)
+        str::from_utf8(&c).map(str::to_owned).map_err(RouterError::from)
     });
 
     // Next we want to an operation on the body. This needs to happen in a future for two reasons
@@ -39,7 +37,7 @@ pub fn global_request_entrypoint(
 
         let resp: Response<Body> = body_result
             // Delegate to the handler to actually deal with this request
-            .and_then(|body| handler.handle(http_verb, uri, query, body))
+            .and_then(|body| handler.handle(http_verb, &uri, query, body))
             .unwrap_or_else(|e| {
                 warn!("Forced to convert error {:?} into a http response", e);
                 e.into()
@@ -57,20 +55,21 @@ pub fn global_request_entrypoint(
 
 #[derive(Debug)]
 pub struct HttpRequestHandler {
-    test_output: String,
+    // Contents of this handler need to be thread-safe
+    request_forwarder: RequestForwarder,
 }
 
 impl HttpRequestHandler {
     pub fn new() -> Self {
         Self {
-            test_output: String::from("this is a test"),
+            request_forwarder: RequestForwarder::new(),
         }
     }
 
     fn handle(
         &self,
         http_verb: Method,
-        uri: Uri,
+        uri: &Uri,
         query: String,
         body: String,
     ) -> Result<Response<Body>, RouterError> {
@@ -83,9 +82,6 @@ impl HttpRequestHandler {
         let method = path_components[3].to_string();
 
         let request = ComponentRequest::new(http_verb, query, body, user, repo, method);
-        let result_body = request.forward_component_request();
-
-        //TODO: This should return the actual response from the server
-        Ok(Response::builder().status(200).body(result_body).unwrap())
+        Ok(self.request_forwarder.forward_request(request)?)
     }
 }

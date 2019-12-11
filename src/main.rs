@@ -10,16 +10,18 @@
 #![allow(
     clippy::cast_precision_loss,     // There is no way to avoid this precision loss
     clippy::module_name_repetitions, // Sometimes clear naming calls for repetition
-    clippy::multiple_crate_versions,  // There is no way to easily fix this without modifying our dependencies
-    clippy::needless_pass_by_value // FIXME: Remove once the code is in a better state 
+    clippy::multiple_crate_versions,  // There is no way to easily fix this without modifying our dependencies 
 )]
 
 #[macro_use]
 extern crate failure;
 #[macro_use]
 extern crate log;
+#[macro_use]
+extern crate serde;
 
 mod error;
+mod model;
 mod request_handler;
 mod router;
 mod server;
@@ -30,7 +32,7 @@ use std::sync::Arc;
 use crate::request_handler::HttpRequestHandler;
 
 fn main() {
-    let log_spec = "trace, hyper=info, mio=info, tokio_reactor=info, tokio_threadpool=info";
+    let log_spec = "debug, hyper=info, mio=info, tokio_reactor=info, tokio_threadpool=info";
 
     flexi_logger::Logger::with_str(log_spec).start().unwrap();
     info!("Router started...(logger initialized)");
