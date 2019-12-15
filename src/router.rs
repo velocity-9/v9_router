@@ -144,7 +144,7 @@ impl RequestForwarder {
             url = format!("{}?{}", url, request.query);
         }
 
-        // TODO: This blocks the executor
+        // TODO: This blocks the executor, so we probably should do something smarter than just blocking
         let client = reqwest::Client::new();
         let mut worker_resp = client
             .request(request.http_verb, &url)
