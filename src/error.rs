@@ -9,7 +9,7 @@ pub enum RouterError {
     InternalJsonHandling(serde_json::Error),
     InvalidRequest(reqwest::Error),
     InvalidUtf8(Utf8Error),
-    PathNotFound(),
+    PathNotFound(String),
 }
 
 impl Display for RouterError {
@@ -31,8 +31,8 @@ impl Display for RouterError {
                 write!(f, "RouterError, caused by internal utf8 decode error: {}", e)?;
             }
 
-            Self::PathNotFound() => {
-                write!(f, "RouterError, caused by invalid URL path")?;
+            Self::PathNotFound(p) => {
+                write!(f, "RouterError, invalid path: {}", p)?;
             }
         }
         Ok(())
@@ -65,9 +65,15 @@ impl From<Utf8Error> for RouterError {
 
 impl Into<Response<Body>> for RouterError {
     fn into(self) -> Response<Body> {
+        let msg = self.to_string();
+        let error_code = match self {
+            Self::PathNotFound(_) => 404,
+            _ => 532,
+        };
+
         Response::builder()
-            .status(532)
-            .body(Body::from(self.to_string()))
+            .status(error_code)
+            .body(Body::from(msg))
             .unwrap()
     }
 }
