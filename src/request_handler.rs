@@ -5,7 +5,7 @@ use hyper::rt::{Future, Stream};
 use hyper::{Body, Method, Request, Response, Uri};
 
 use crate::error::RouterError;
-use crate::router::{ComponentRequest, RequestForwarder};
+use crate::request_forwarder::{ComponentRequest, RequestForwarder};
 
 // Warning: This method is somewhat complicated, since it needs to deal with async stuff
 // TODO: Consider making this a method on a struct somewhere
