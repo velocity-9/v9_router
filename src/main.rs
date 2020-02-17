@@ -21,10 +21,12 @@ extern crate log;
 extern crate serde;
 
 mod error;
+mod load_balancer;
 mod model;
+mod request_forwarder;
 mod request_handler;
-mod router;
 mod server;
+mod worker;
 
 use std::env;
 use std::sync::Arc;

@@ -1,9 +1,17 @@
+use std::fmt::{self, Display, Formatter};
+
 // These are just nice PORO (plain old rust objects) for modeling requests and responses
 
 #[derive(Clone, Deserialize, Debug, Eq, Hash, PartialEq, Serialize)]
 pub struct ComponentPath {
     pub user: String,
     pub repo: String,
+}
+
+impl Display for ComponentPath {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
+        f.write_str(&self.to_string())
+    }
 }
 
 impl ComponentPath {
