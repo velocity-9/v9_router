@@ -10,7 +10,7 @@ pub struct ComponentPath {
 
 impl Display for ComponentPath {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), fmt::Error> {
-        f.write_str(&self.to_string())
+        f.write_str(&format!("{}/{}", self.user, self.repo))
     }
 }
 
