@@ -15,7 +15,7 @@ edition = "2018"
 [dependencies]
 failure = { version = "0.1.5", features = ["derive"]}
 flexi_logger = "0.14.3"
-hyper = "0.12.35"
+hyper = "0.14.10"
 log = "0.4.8"
 parking_lot = "0.10.0"
 reqwest = "0.9.22"
